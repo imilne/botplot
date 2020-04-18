@@ -31,20 +31,12 @@ public class AccessTracker
 
 		readLogs("last.txt", true);
 		readLogs("lastb.txt", false);
+		readSecure("secure.txt");
 		clearOldEntries();
 
 		populateIPs();
 
 		createMapFile();
-
-//		for (IPAddress address: addresses.values())
-//		{
-//			if (address.countPasses() == 0)
-//				continue;
-//			System.out.println("Details for " + address.ip);
-//			System.out.println("  " + address.lat + "," + address.lon + "\t" + address.city + "\t" + address.country);
-//			System.out.println("  pass: " + address.countPasses() + ", fail: " + address.countFails());
-//		}
 
 		saveDB();
 	}
@@ -80,6 +72,49 @@ public class AccessTracker
 
 			// Add this login attempt to the IP's hash of logins
 			address.addLogin(date.getTime(), usePass);
+		}
+
+		in.close();
+	}
+
+	private void readSecure(String filename)
+		throws Exception
+	{
+		BufferedReader in = new BufferedReader(new FileReader(filename));
+
+		String str = null;
+		while ((str = in.readLine()) != null)
+		{
+			if (str.isEmpty())
+				continue;
+
+			String[] tokens = str.split("\\s+");
+
+			// Skip on internal connections
+			if (tokens[10].startsWith("10.25."))
+				continue;
+
+			// /var/log/secure time format is just Apr 12 03:33:16 so we need
+			// to insert the year for easy parsing
+			String ip = tokens[10];
+			String dateStr = Calendar.getInstance().get(Calendar.YEAR) + " "
+				+ tokens[0] + " " + tokens[1] + " " + tokens[2];
+			DateFormat df = new SimpleDateFormat("yyyy MMM dd HH:mm:ss");
+			Calendar c = Calendar.getInstance();
+			c.setTime(df.parse(dateStr));
+
+			// Deal with year end wrap around - do YEAR-1 so, eg, Dec entries
+			// (read in Jan) are set to the older year)
+			if (c.getTimeInMillis() > NOW)
+				c.set(Calendar.YEAR, c.get(Calendar.YEAR)-1);
+
+//			System.out.println("  " + new Date(c.getTimeInMillis()));
+
+			addresses.putIfAbsent(ip, new IPAddress(ip));
+			IPAddress address = addresses.get(ip);
+
+			// Add this login attempt to the IP's hash of logins
+			address.addLogin(c.getTimeInMillis(), false);
 		}
 
 		in.close();
@@ -314,8 +349,8 @@ public class AccessTracker
 
 		String getColor()
 		{
-			// "Green" if a passed login was more recent than a failed attempt
-			if (lastPassTime > lastFailTime)
+			// "Green" if a login has worked at any point in time
+			if (lastPassTime > 0)
 				return "#017101";
 			// Otherwise "red"
 			else
