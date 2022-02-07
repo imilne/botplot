@@ -179,8 +179,8 @@ public class AccessTracker
 				System.out.println("Details for " + address.ip);
 				System.out.println("  " + address.lat + "," + address.lon + "\t" + address.city + "\t" + address.country);
 
-				// Wait 750ms between requests
-				try { Thread.sleep(750); }
+				// Wait 1500ms between requests
+				try { Thread.sleep(1500); }
 				catch (InterruptedException e) {}
 			}
 			catch (Exception e) {
