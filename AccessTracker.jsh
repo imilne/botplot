@@ -1,4 +1,4 @@
-#!/mnt/shared/apps/java/13.0.2/bin/java --source 11
+#!/mnt/cluster/apps/java/13.0.2/bin/java --source 11
 
 import java.io.*;
 import java.net.*;
@@ -60,7 +60,7 @@ public class AccessTracker
 			if (tokens[0].equals("reboot") || tokens[2].startsWith(":pts"))
 				continue;
 			// Or internal connections
-			if (tokens[2].startsWith("10.25."))
+			if (tokens[2].startsWith("10."))
 				continue;
 
 			String ip = tokens[2];
@@ -151,7 +151,7 @@ public class AccessTracker
 
 			try
 			{
-				URL url = new URL("http://www.geoplugin.net/xml.gp?ip=" + address.ip);
+				URL url = new URL("http://ip-api.com/xml/" + address.ip);
 
 				HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
@@ -166,20 +166,20 @@ public class AccessTracker
 					if (n.getTextContent().isEmpty())
 						continue;
 
-					if (n.getNodeName().toLowerCase().equals("geoplugin_latitude"))
+					if (n.getNodeName().toLowerCase().equals("lat"))
 						address.lat = n.getTextContent();
-					else if (n.getNodeName().toLowerCase().equals("geoplugin_longitude"))
+					else if (n.getNodeName().toLowerCase().equals("lon"))
 						address.lon = n.getTextContent();
-					else if (n.getNodeName().toLowerCase().equals("geoplugin_city"))
+					else if (n.getNodeName().toLowerCase().equals("city"))
 						address.city = n.getTextContent();
-					else if (n.getNodeName().toLowerCase().equals("geoplugin_countryname"))
+					else if (n.getNodeName().toLowerCase().equals("country"))
 						address.country = n.getTextContent();
 				}
 
 				System.out.println("Details for " + address.ip);
 				System.out.println("  " + address.lat + "," + address.lon + "\t" + address.city + "\t" + address.country);
 
-				// Wait 750ms between requests to GeoPlugin
+				// Wait 750ms between requests
 				try { Thread.sleep(750); }
 				catch (InterruptedException e) {}
 			}
